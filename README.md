@@ -82,7 +82,7 @@ All screenshots used here are under `/assets`.
 ---
 
 ## 📝 License
+MIT © 2025 
 
 
 ***Altan Ulaş Zöhre***
-MIT © 2025 
