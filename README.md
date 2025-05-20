@@ -83,4 +83,6 @@ All screenshots used here are under `/assets`.
 
 ## 📝 License
 
+
+***Altan Ulaş Zöhre***
 MIT © 2025 
