@@ -83,4 +83,4 @@ All screenshots used here are under `/assets`.
 
 ## 📝 License
 
-MIT © 2025 - MindDesk Team
+MIT © 2025 
