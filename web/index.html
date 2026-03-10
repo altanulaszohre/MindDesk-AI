@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MindDesk AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0d0d14;
+  --surface: #13131f;
+  --card: #1a1a2e;
+  --border: #252540;
+  --accent: #7b61ff;
+  --accent2: #00aeef;
+  --accent3: #4caf50;
+  --warn: #ff9800;
+  --danger: #ff4d6d;
+  --text: #e8e8f8;
+  --muted: #6060a0;
+  --user-bubble: #1e1e3a;
+  --ai-bubble: #161628;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Outfit',sans-serif;
+  display:flex;flex-direction:column;
+}
+
+/* Animated background */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(123,97,255,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(0,174,239,0.05) 0%, transparent 60%);
+  pointer-events:none;z-index:0;
+}
+
+/* HEADER */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:58px;
+  background:rgba(13,13,20,0.9);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+  position:relative;z-index:10;
+  flex-shrink:0;
+}
+.logo{
+  display:flex;align-items:center;gap:10px;
+  font-size:1.2rem;font-weight:700;letter-spacing:-0.02em;
+}
+.logo-icon{
+  width:34px;height:34px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;
+}
+.logo span{color:var(--accent);}
+
+.header-right{display:flex;align-items:center;gap:12px;}
+.api-status{
+  display:flex;align-items:center;gap:6px;
+  font-size:0.72rem;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;
+}
+.status-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--muted);
+  transition:background 0.3s;
+}
+.status-dot.connected{background:var(--accent3);box-shadow:0 0 6px var(--accent3);}
+
+.api-input-wrap{
+  display:flex;align-items:center;gap:0;
+}
+.api-field{
+  background:var(--card);border:1px solid var(--border);
+  border-right:none;
+  color:var(--text);padding:6px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:0.7rem;
+  outline:none;width:200px;
+  transition:border-color 0.2s;
+}
+.api-field:focus{border-color:var(--accent);}
+.api-field::placeholder{color:var(--muted);}
+.api-save{
+  background:var(--accent);color:#fff;border:none;
+  padding:6px 14px;font-size:0.72rem;font-weight:600;
+  cursor:pointer;font-family:'Outfit',sans-serif;
+  transition:opacity 0.2s;white-space:nowrap;
+}
+.api-save:hover{opacity:0.85;}
+
+/* LAYOUT */
+.app-layout{
+  display:flex;flex:1;overflow:hidden;
+  position:relative;z-index:1;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:16px 12px;gap:6px;
+}
+.sidebar-label{
+  font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--muted);padding:0 8px;margin-top:12px;margin-bottom:4px;
+}
+.sidebar-label:first-child{margin-top:0;}
+.side-btn{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;
+  color:var(--muted);font-size:0.82rem;
+  cursor:pointer;transition:all 0.2s;
+  border:none;background:none;text-align:left;width:100%;
+}
+.side-btn:hover{background:var(--card);color:var(--text);}
+.side-btn.active{background:rgba(123,97,255,0.15);color:var(--accent);}
+.side-btn .icon{font-size:1rem;width:20px;text-align:center;}
+
+.model-select{
+  background:var(--card);border:1px solid var(--border);
+  color:var(--text);padding:8px 10px;
+  font-family:'Outfit',sans-serif;font-size:0.78rem;
+  outline:none;width:100%;border-radius:6px;
+  cursor:pointer;margin-top:4px;
+}
+.model-select option{background:var(--card);}
+
+.temp-wrap{padding:0 4px;}
+.temp-label{
+  display:flex;justify-content:space-between;
+  font-size:0.72rem;color:var(--muted);margin-bottom:6px;
+}
+.temp-label span{color:var(--accent);font-family:'JetBrains Mono',monospace;}
+input[type=range]{
+  width:100%;accent-color:var(--accent);
+  height:3px;cursor:pointer;
+}
+
+.clear-btn{
+  margin-top:auto;
+  display:flex;align-items:center;gap:8px;
+  padding:9px 12px;border-radius:8px;
+  color:var(--danger);font-size:0.82rem;
+  cursor:pointer;transition:all 0.2s;
+  border:1px solid transparent;background:none;text-align:left;width:100%;
+}
+.clear-btn:hover{background:rgba(255,77,109,0.1);border-color:rgba(255,77,109,0.3);}
+
+/* CHAT AREA */
+.chat-area{
+  flex:1;display:flex;flex-direction:column;
+  overflow:hidden;min-width:0;
+}
+
+.chat-messages{
+  flex:1;overflow-y:auto;
+  padding:24px;
+  display:flex;flex-direction:column;gap:16px;
+  scroll-behavior:smooth;
+}
+.chat-messages::-webkit-scrollbar{width:4px;}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* Welcome screen */
+.welcome{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;text-align:center;padding:40px;
+  gap:16px;
+}
+.welcome-icon{font-size:3.5rem;margin-bottom:8px;}
+.welcome h2{
+  font-size:1.8rem;font-weight:700;letter-spacing:-0.03em;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.welcome p{font-size:0.88rem;color:var(--muted);max-width:400px;line-height:1.7;}
+.welcome-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;}
+.chip{
+  background:var(--card);border:1px solid var(--border);
+  padding:8px 16px;border-radius:20px;
+  font-size:0.78rem;color:var(--muted);
+  cursor:pointer;transition:all 0.2s;
+}
+.chip:hover{border-color:var(--accent);color:var(--text);}
+
+/* Messages */
+.msg{display:flex;flex-direction:column;max-width:75%;animation:msgIn 0.3s ease;}
+.msg.user{align-self:flex-end;align-items:flex-end;}
+.msg.ai{align-self:flex-start;align-items:flex-start;}
+
+@keyframes msgIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.msg-role{
+  font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:5px;
+  display:flex;align-items:center;gap:6px;
+}
+.msg-role .role-icon{font-size:0.85rem;}
+
+.msg-bubble{
+  padding:12px 16px;border-radius:14px;
+  font-size:0.88rem;line-height:1.7;
+  white-space:pre-wrap;word-break:break-word;
+}
+.msg.user .msg-bubble{
+  background:var(--user-bubble);
+  border:1px solid rgba(123,97,255,0.2);
+  border-bottom-right-radius:4px;
+}
+.msg.ai .msg-bubble{
+  background:var(--ai-bubble);
+  border:1px solid var(--border);
+  border-bottom-left-radius:4px;
+}
+
+.msg-time{
+  font-size:0.62rem;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;
+  margin-top:4px;
+}
+
+/* Typing indicator */
+.typing-indicator{
+  display:none;align-self:flex-start;
+  background:var(--ai-bubble);border:1px solid var(--border);
+  padding:12px 18px;border-radius:14px;border-bottom-left-radius:4px;
+  gap:5px;align-items:center;
+}
+.typing-indicator.show{display:flex;}
+.typing-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--accent);opacity:0.4;
+  animation:typingBounce 1.2s infinite;
+}
+.typing-dot:nth-child(2){animation-delay:0.2s;}
+.typing-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:0.4;}30%{transform:translateY(-6px);opacity:1;}}
+
+/* INPUT AREA */
+.input-area{
+  padding:16px 24px 20px;
+  background:rgba(13,13,20,0.8);
+  border-top:1px solid var(--border);
+  backdrop-filter:blur(8px);
+  flex-shrink:0;
+}
+
+/* File preview */
+.file-preview{
+  display:none;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:10px 14px;
+  margin-bottom:10px;
+  font-size:0.78rem;color:var(--muted);
+  align-items:center;gap:10px;
+}
+.file-preview.show{display:flex;}
+.file-name{color:var(--text);flex:1;}
+.file-remove{
+  background:none;border:none;color:var(--danger);
+  cursor:pointer;font-size:1rem;padding:0;
+}
+
+.input-box{
+  display:flex;align-items:flex-end;gap:10px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px 12px;
+  transition:border-color 0.2s;
+}
+.input-box:focus-within{border-color:var(--accent);}
+
+#userInput{
+  flex:1;background:none;border:none;
+  color:var(--text);outline:none;
+  font-family:'Outfit',sans-serif;font-size:0.9rem;
+  resize:none;max-height:140px;min-height:24px;
+  line-height:1.5;padding:2px 0;
+}
+#userInput::placeholder{color:var(--muted);}
+
+.input-actions{display:flex;align-items:center;gap:6px;}
+.icon-btn{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;border:1px solid var(--border);
+  background:transparent;cursor:pointer;
+  transition:all 0.2s;color:var(--muted);
+  flex-shrink:0;
+}
+.icon-btn:hover{background:var(--surface);color:var(--text);}
+.icon-btn.active{background:rgba(255,77,109,0.2);border-color:var(--danger);color:var(--danger);}
+.icon-btn.recording{
+  background:rgba(255,77,109,0.2);border-color:var(--danger);
+  color:var(--danger);animation:pulse 1s infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,0.4);}50%{box-shadow:0 0 0 6px rgba(255,77,109,0);}}
+
+.send-btn{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--accent);border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.2s;
+  color:white;font-size:1rem;flex-shrink:0;
+}
+.send-btn:hover{background:#9580ff;transform:scale(1.05);}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+
+.input-hint{
+  display:flex;justify-content:space-between;
+  font-size:0.65rem;color:var(--muted);
+  margin-top:8px;padding:0 4px;
+}
+
+/* Summarize panel */
+.summarize-panel{
+  display:none;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:14px;
+  margin-bottom:12px;
+}
+.summarize-panel.show{display:block;}
+.sum-title{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+.sum-result{font-size:0.83rem;color:var(--text);line-height:1.7;}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--card);border:1px solid var(--border);
+  padding:10px 18px;border-radius:8px;
+  font-size:0.78rem;color:var(--text);
+  z-index:1000;
+  opacity:0;transform:translateY(8px);
+  transition:all 0.3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* Responsive */
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .api-field{width:130px;}
+  .chat-messages{padding:16px;}
+  .input-area{padding:12px 16px 16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧠</div>
+    Mind<span>Desk</span> AI
+  </div>
+  <div class="header-right">
+    <div class="api-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">No API key</span>
+    </div>
+    <div class="api-input-wrap">
+      <input class="api-field" id="apiKeyField" type="password" placeholder="sk-ant-... API key"/>
+      <button class="api-save" onclick="saveApiKey()">Connect</button>
+    </div>
+  </div>
+</header>
+
+<!-- LAYOUT -->
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-label">Chat</div>
+    <button class="side-btn active" onclick="newChat()">
+      <span class="icon">✦</span> New Chat
+    </button>
+
+    <div class="sidebar-label">Tools</div>
+    <button class="side-btn" onclick="triggerFile()">
+      <span class="icon">📂</span> Load File
+    </button>
+    <button class="side-btn" id="sumBtn" onclick="toggleSummarize()">
+      <span class="icon">📝</span> Summarize
+    </button>
+    <button class="side-btn" onclick="toggleTTS()">
+      <span class="icon">🔊</span> <span id="ttsLabel">TTS: Off</span>
+    </button>
+
+    <div class="sidebar-label">Model</div>
+    <select class="model-select" id="modelSelect">
+      <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+      <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+    </select>
+
+    <div class="sidebar-label">Temperature</div>
+    <div class="temp-wrap">
+      <div class="temp-label">Creativity <span id="tempVal">0.7</span></div>
+      <input type="range" min="0" max="1" step="0.1" value="0.7" id="tempSlider"
+        oninput="document.getElementById('tempVal').textContent=this.value"/>
+    </div>
+
+    <button class="clear-btn" onclick="clearChat()">
+      <span>🗑</span> Clear Chat
+    </button>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-area">
+    <div class="chat-messages" id="chatMessages">
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-icon">🧠</div>
+        <h2>MindDesk AI</h2>
+        <p>Your intelligent assistant. Chat, upload files, speak, and summarize — all in one place.</p>
+        <div class="welcome-chips">
+          <div class="chip" onclick="sendQuick('Explain neural networks simply')">Explain neural networks</div>
+          <div class="chip" onclick="sendQuick('Write a Python function to sort a list')">Write Python code</div>
+          <div class="chip" onclick="sendQuick('What are the best practices for LLM prompting?')">LLM prompting tips</div>
+          <div class="chip" onclick="sendQuick('Summarize the key ideas of RAG systems')">Explain RAG</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+
+    <!-- INPUT -->
+    <div class="input-area">
+      <!-- Summarize panel -->
+      <div class="summarize-panel" id="sumPanel">
+        <div class="sum-title">📝 Summary</div>
+        <div class="sum-result" id="sumResult">Type or paste text below and click Summarize.</div>
+      </div>
+
+      <!-- File preview -->
+      <div class="file-preview" id="filePreview">
+        <span>📄</span>
+        <span class="file-name" id="fileName">file.txt</span>
+        <button class="file-remove" onclick="removeFile()">✕</button>
+      </div>
+
+      <div class="input-box">
+        <textarea id="userInput" rows="1" placeholder="Message MindDesk AI..."
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <div class="input-actions">
+          <input type="file" id="fileInput" accept=".txt,.md,.csv,.json,.py,.js,.html" style="display:none" onchange="handleFile(event)"/>
+          <button class="icon-btn" title="Upload file" onclick="triggerFile()">📂</button>
+          <button class="icon-btn" id="micBtn" title="Voice input" onclick="toggleMic()">🎙️</button>
+          <button class="icon-btn" id="sumIconBtn" title="Summarize input" onclick="summarizeInput()">📝</button>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
+            ➤
+          </button>
+        </div>
+      </div>
+      <div class="input-hint">
+        <span>Enter to send · Shift+Enter for new line</span>
+        <span id="charCount">0 chars</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- STATE ----
+let apiKey = localStorage.getItem('minddesk_key') || '';
+let messages = [];
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let ttsEnabled = false;
+let fileContent = '';
+let isSumMode = false;
+
+// ---- INIT ----
+if (apiKey) {
+  document.getElementById('apiKeyField').value = apiKey;
+  setConnected(true);
+}
+
+document.getElementById('userInput').addEventListener('input', function() {
+  document.getElementById('charCount').textContent = this.value.length + ' chars';
+});
+
+// ---- API KEY ----
+function saveApiKey() {
+  const key = document.getElementById('apiKeyField').value.trim();
+  if (!key) { showToast('Please enter an API key'); return; }
+  apiKey = key;
+  localStorage.setItem('minddesk_key', key);
+  setConnected(true);
+  showToast('✓ API key saved');
+}
+
+function setConnected(ok) {
+  document.getElementById('statusDot').className = 'status-dot' + (ok ? ' connected' : '');
+  document.getElementById('statusText').textContent = ok ? 'Connected' : 'No API key';
+}
+
+// ---- SEND MESSAGE ----
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  let text = input.value.trim();
+  if (!text && !fileContent) return;
+  if (!apiKey) { showToast('⚠️ Please enter your API key first'); return; }
+
+  if (fileContent) text = `[File content]\n${fileContent}\n\n${text || 'Please analyze this file.'}`;
+
+  hideWelcome();
+  addMessage('user', text);
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('charCount').textContent = '0 chars';
+  removeFile();
+
+  messages.push({ role: 'user', content: text });
+  showTyping(true);
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: document.getElementById('modelSelect').value,
+        max_tokens: 1024,
+        temperature: parseFloat(document.getElementById('tempSlider').value),
+        system: "You are MindDesk AI, a helpful, intelligent assistant. Be concise, clear, and friendly.",
+        messages: messages
+      })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.content[0].text;
+    messages.push({ role: 'assistant', content: reply });
+    showTyping(false);
+    addMessage('ai', reply);
+    if (ttsEnabled) speakText(reply);
+  } catch (err) {
+    showTyping(false);
+    addMessage('ai', '⚠️ Error: ' + err.message);
+  }
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function sendQuick(text) {
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+// ---- UI HELPERS ----
+function hideWelcome() {
+  const w = document.getElementById('welcomeScreen');
+  if (w) w.style.display = 'none';
+}
+
+function addMessage(role, text) {
+  const container = document.getElementById('chatMessages');
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-role">
+      <span class="role-icon">${role === 'user' ? '👤' : '🧠'}</span>
+      ${role === 'user' ? 'You' : 'MindDesk AI'}
+    </div>
+    <div class="msg-bubble">${escapeHtml(text)}</div>
+    <div class="msg-time">${time}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function showTyping(show) {
+  document.getElementById('typingIndicator').className = 'typing-indicator' + (show ? ' show' : '');
+  if (show) {
+    const c = document.getElementById('chatMessages');
+    c.scrollTop = c.scrollHeight;
+  }
+}
+
+// ---- VOICE INPUT ----
+async function toggleMic() {
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        // Use Web Speech API for transcription
+        showToast('🎙️ Processing speech...');
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById('micBtn').className = 'icon-btn recording';
+      showToast('🔴 Recording... click again to stop');
+
+      // Use Web Speech API simultaneously
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SR();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.onresult = e => {
+          const transcript = e.results[0][0].transcript;
+          document.getElementById('userInput').value = transcript;
+          autoResize(document.getElementById('userInput'));
+          document.getElementById('charCount').textContent = transcript.length + ' chars';
+          showToast('✓ Speech recognized');
+        };
+        recognition.onerror = () => showToast('Could not recognize speech');
+        recognition.start();
+        window._currentRecognition = recognition;
+      }
+    } catch (err) {
+      showToast('Microphone access denied');
+    }
+  } else {
+    isRecording = false;
+    document.getElementById('micBtn').className = 'icon-btn';
+    if (mediaRecorder) mediaRecorder.stop();
+    if (window._currentRecognition) window._currentRecognition.stop();
+  }
+}
+
+// ---- TTS ----
+function toggleTTS() {
+  ttsEnabled = !ttsEnabled;
+  document.getElementById('ttsLabel').textContent = `TTS: ${ttsEnabled ? 'On' : 'Off'}`;
+  showToast(ttsEnabled ? '🔊 Text-to-speech on' : '🔇 Text-to-speech off');
+}
+
+function speakText(text) {
+  if (!ttsEnabled || !window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text.slice(0, 500));
+  utt.rate = 1; utt.pitch = 1;
+  const voices = speechSynthesis.getVoices();
+  const female = voices.find(v => v.name.toLowerCase().includes('female') || v.name.includes('Samantha') || v.name.includes('Google UK English Female'));
+  if (female) utt.voice = female;
+  speechSynthesis.speak(utt);
+}
+
+// ---- FILE ----
+function triggerFile() { document.getElementById('fileInput').click(); }
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    fileContent = ev.target.result.slice(0, 8000);
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('filePreview').className = 'file-preview show';
+    showToast(`📄 Loaded: ${file.name}`);
+  };
+  reader.readAsText(file);
+}
+
+function removeFile() {
+  fileContent = '';
+  document.getElementById('filePreview').className = 'file-preview';
+  document.getElementById('fileInput').value = '';
+}
+
+// ---- SUMMARIZE ----
+function toggleSummarize() {
+  isSumMode = !isSumMode;
+  document.getElementById('sumPanel').className = 'summarize-panel' + (isSumMode ? ' show' : '');
+  document.getElementById('sumBtn').className = 'side-btn' + (isSumMode ? ' active' : '');
+}
+
+function summarizeInput() {
+  const text = fileContent || document.getElementById('userInput').value.trim();
+  if (!text) { showToast('Enter or load text to summarize'); return; }
+
+  // Simple extractive summarization (no API needed)
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  if (sentences.length <= 3) {
+    showSummary(text);
+    return;
+  }
+  const words = text.toLowerCase().split(/\W+/).filter(w => w.length > 4);
+  const freq = {};
+  words.forEach(w => freq[w] = (freq[w] || 0) + 1);
+  const scored = sentences.map(s => ({
+    s,
+    score: s.toLowerCase().split(/\W+/).reduce((a, w) => a + (freq[w] || 0), 0)
+  }));
+  const top = scored.sort((a,b)=>b.score-a.score).slice(0,3).map(x=>x.s).join(' ');
+  showSummary(top);
+}
+
+function showSummary(text) {
+  document.getElementById('sumResult').textContent = text;
+  document.getElementById('sumPanel').className = 'summarize-panel show';
+  isSumMode = true;
+  document.getElementById('sumBtn').className = 'side-btn active';
+}
+
+// ---- MISC ----
+function newChat() {
+  messages = [];
+  document.getElementById('chatMessages').innerHTML = `
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-icon">🧠</div>
+      <h2>MindDesk AI</h2>
+      <p>Your intelligent assistant. Chat, upload files, speak, and summarize — all in one place.</p>
+      <div class="welcome-chips">
+        <div class="chip" onclick="sendQuick('Explain neural networks simply')">Explain neural networks</div>
+        <div class="chip" onclick="sendQuick('Write a Python function to sort a list')">Write Python code</div>
+        <div class="chip" onclick="sendQuick('What are the best practices for LLM prompting?')">LLM prompting tips</div>
+        <div class="chip" onclick="sendQuick('Summarize the key ideas of RAG systems')">Explain RAG</div>
+      </div>
+    </div>`;
+  removeFile();
+  showToast('✓ New chat started');
+}
+
+function clearChat() { newChat(); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show';
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+// Load voices for TTS
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => {};
+</script>
+</body>
+</html>
